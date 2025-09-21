@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>意汉 Warm-Up!</title>
+    <!-- Google Fonts for the Poppins font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .container { max-width: 42rem; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .blitz-word { animation: fadeIn 1s forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .reorder-button { transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out; cursor: pointer; }
+        .reorder-button:hover { transform: translateY(-2px); }
+        .reorder-button.selected { background-color: #c4b5fd; }
+        .tone-box { cursor: pointer; transition: transform 0.2s ease, background-color 0.2s ease; width: 40px; height: 40px; }
+        .tone-box:hover { transform: scale(1.1); background-color: #e5e7eb; }
+        .tone-box.selected-tone { background-color: #6366f1; border-color: #4338ca; }
+        .tone-box.selected-tone span { color: white; }
+        .syllable-drop-zone { border: 2px dashed #cbd5e1; transition: background-color 0.2s, border-color 0.2s; position: relative; cursor: pointer; }
+        .syllable-drop-zone:hover { background-color: #e0e7ff; border-color: #818cf8; }
+        .syllable-drop-zone .tone-overlay { position: absolute; top: -0.5rem; left: 0; right: 0; font-size: 2rem; line-height: 1; color: #4f46e5; pointer-events: none; }
+        .italian-option-button.selected { background-color: #6366f1; color: white; border-color: #4338ca; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Team Selection Screen -->
+    <div id="team-selection-screen" class="container bg-white bg-opacity-90 rounded-3xl shadow-2xl w-full p-6 sm:p-8 text-center space-y-6">
+        <h1 class="text-3xl sm:text-4xl pacifico text-purple-700 drop-shadow-md mb-2">Welcome to 意汉 Warm-Up!</h1>
+        <p class="text-gray-600 text-lg mb-8">Please choose your team to begin the challenge.</p>
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <button id="join-team-a" class="w-full sm:w-auto px-10 py-5 bg-purple-600 text-white font-bold rounded-2xl shadow-lg hover:bg-purple-700 transition-colors duration-200 text-2xl">Join Team A</button>
+            <button id="join-team-b" class="w-full sm:w-auto px-10 py-5 bg-pink-600 text-white font-bold rounded-2xl shadow-lg hover:bg-pink-700 transition-colors duration-200 text-2xl">Join Team B</button>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="main-game-container" class="container bg-white bg-opacity-90 rounded-3xl shadow-2xl w-full p-6 sm:p-8 space-y-6 hidden">
+        <div class="flex flex-col items-center text-center">
+            <h1 class="text-3xl sm:text-4xl pacifico text-purple-700 drop-shadow-md mb-2">意汉 Warm-Up!</h1>
+            <p class="text-gray-600 mb-4">Designed for your classroom. Divide students into two teams!</p>
+            <nav class="flex space-x-2 sm:space-x-4 p-2 bg-gray-200 rounded-full">
+                <button data-tab="tab1" class="tab-button px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-medium text-gray-700 bg-white shadow-sm transition-colors duration-200">Memory Blitz</button>
+                <button data-tab="tab2" class="tab-button px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-300 transition-colors duration-200">Callout Challenge</button>
+            </nav>
+        </div>
+
+        <!-- Tab 1: Italian-Chinese Memory Blitz -->
+        <div id="tab1" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4 text-center">Italian-Chinese Memory Blitz</h2>
+            <div id="blitz-game" class="flex flex-col items-center space-y-6">
+                <p id="blitz-round-info" class="text-lg font-semibold text-gray-700">Round 1 of 2</p>
+                <p id="blitz-team-info" class="text-lg font-semibold text-gray-700"></p>
+                <div id="blitz-reminder" class="hidden flex items-center justify-center h-40 w-full text-2xl font-bold text-gray-700 rounded-xl bg-purple-200 shadow-inner p-4 animate-pulse">Ready?</div>
+                <div id="blitz-display" class="flex items-center justify-center h-40 w-full text-3xl sm:text-5xl font-bold text-gray-800 rounded-xl bg-gray-50 shadow-inner p-4">Ready?</div>
+                <button id="start-blitz" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition-colors duration-200 transform hover:scale-105">Start the Blitz</button>
+                <div id="reorder-ui" class="hidden w-full space-y-4">
+                    <p id="reorder-prompt" class="text-lg font-semibold text-gray-700"></p>
+                    <div id="word-buttons" class="flex flex-wrap justify-center gap-4"></div>
+                    <p class="text-sm font-medium text-gray-500">Your order:</p>
+                    <div id="user-order-display" class="w-full min-h-[50px] p-2 bg-gray-100 rounded-lg border-2 border-gray-300 flex flex-wrap gap-2 items-center"></div>
+                    <button id="submit-reorder" class="w-full px-6 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700" disabled>Submit</button>
+                </div>
+                <div id="blitz-questions" class="hidden w-full space-y-4">
+                    <div class="text-lg font-semibold text-gray-700" id="blitz-question"></div>
+                    <div id="blitz-options-container" class="grid grid-cols-1 gap-3"></div>
+                    <div class="flex space-x-4 w-full">
+                        <button id="blitz-previous-button" class="flex-1 px-4 py-2 bg-blue-500 text-white font-bold rounded-xl shadow-lg hover:bg-blue-600">Previous</button>
+                        <button id="blitz-skip-button" class="flex-1 px-4 py-2 bg-gray-400 text-white font-bold rounded-xl shadow-lg hover:bg-gray-500">Skip</button>
+                    </div>
+                </div>
+                <div id="blitz-feedback" class="h-8 text-center text-sm font-medium"></div>
+                <!-- New buttons for reorder feedback -->
+                <div id="blitz-post-feedback-actions" class="hidden flex space-x-4 mt-2">
+                    <button id="blitz-show-answer-button" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600">Show Answer</button>
+                    <button id="blitz-skip-reorder-button" class="px-4 py-2 bg-gray-500 text-white font-bold rounded-xl shadow-lg hover:bg-gray-600">Skip Phase</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Character Callout Challenge -->
+        <div id="tab2" class="tab-content text-center">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Character Callout Challenge</h2>
+            <div id="callout-game" class="flex flex-col items-center space-y-6">
+                <!-- Transition Screen -->
+                <div id="transition-screen" class="hidden w-full text-center p-8 bg-purple-100 rounded-lg">
+                    <h3 id="transition-title" class="text-2xl font-bold text-purple-800">Team A Finished!</h3>
+                    <p id="transition-text" class="text-gray-600 mt-2 mb-4">Get Ready, Team B!</p>
+                    <button id="start-next-turn-button" class="px-6 py-3 bg-pink-600 text-white font-bold rounded-xl shadow-lg hover:bg-pink-700">Start Team B's Turn</button>
+                </div>
+                <!-- Main Game UI -->
+                <div id="callout-main-ui" class="w-full flex flex-col items-center space-y-6">
+                    <p id="callout-round-info" class="text-lg font-semibold text-gray-700"></p>
+                    <p id="callout-team-info" class="text-lg font-semibold text-gray-700"></p>
+                    <div class="flex items-center justify-center w-full h-28">
+                        <button id="play-audio" class="px-8 py-8 bg-pink-600 text-white rounded-full shadow-lg hover:bg-pink-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-pink-500 flex items-center justify-center transform hover:scale-105">
+                            <i id="audio-icon" class="fas fa-volume-up text-5xl"></i>
+                        </button>
+                    </div>
+                    <div class="w-full">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-semibold text-gray-600">1. Write the Characters</label>
+                            <button id="hanzi-hint-button" class="px-3 py-1 text-sm font-semibold bg-blue-100 text-blue-700 rounded-lg shadow-sm border border-blue-200 hover:bg-blue-200">Give me a hint</button>
+                        </div>
+                        <input type="text" id="callout-answer-hanzi" class="w-full p-3 text-2xl rounded-lg border-2 border-gray-300" placeholder="e.g., 你好">
+                        <div id="hanzi-hint-options" class="hidden grid grid-cols-3 gap-2 mt-2"></div>
+                    </div>
+                    <div class="w-full">
+                        <label class="font-semibold text-gray-600 mb-1 block">2. Write Pinyin (no tones), then tap tones</label>
+                        <input type="text" id="callout-answer-pinyin" class="w-full p-3 rounded-lg border-2 border-gray-300" placeholder="e.g., nihao or ni hao">
+                        <div class="mt-4 space-y-3">
+                            <div id="tone-palette" class="flex justify-center items-center gap-x-2 sm:gap-x-4 bg-gray-100 p-2 rounded-lg">
+                                <div data-tone="1" class="tone-box flex items-center justify-center bg-gray-200 border rounded-md shadow-sm"><span class="text-3xl font-bold text-gray-700 pointer-events-none">¯</span></div>
+                                <div data-tone="2" class="tone-box flex items-center justify-center bg-gray-200 border rounded-md shadow-sm"><span class="text-3xl font-bold text-gray-700 pointer-events-none">´</span></div>
+                                <div data-tone="3" class="tone-box flex items-center justify-center bg-gray-200 border rounded-md shadow-sm"><span class="text-3xl font-bold text-gray-700 pointer-events-none">ˇ</span></div>
+                                <div data-tone="4" class="tone-box flex items-center justify-center bg-gray-200 border rounded-md shadow-sm"><span class="text-3xl font-bold text-gray-700 pointer-events-none">`</span></div>
+                            </div>
+                            <div id="pinyin-tone-target" class="flex justify-center flex-wrap gap-4 min-h-[4rem] items-center"></div>
+                        </div>
+                    </div>
+                    <div class="w-full">
+                         <label class="font-semibold text-gray-600 mb-1 block">3. Choose the Italian Translation</label>
+                        <div id="italian-options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    </div>
+                    <div id="action-buttons-container" class="flex space-x-2 md:space-x-4 w-full">
+                        <button id="previous-challenge-button" class="flex-1 px-4 py-3 bg-blue-500 text-white font-bold rounded-xl shadow-lg hover:bg-blue-600">Previous</button>
+                        <button id="submit-callout" class="flex-1 px-4 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700">Submit</button>
+                        <button id="skip-button" class="flex-1 px-4 py-3 bg-gray-400 text-white font-bold rounded-xl shadow-lg hover:bg-gray-500">Skip</button>
+                    </div>
+                    <div id="callout-feedback" class="h-8 text-center text-sm font-medium"></div>
+                    <button id="next-challenge-button" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 hidden">Next Challenge</button>
+                    <button id="play-again-button" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 hidden">Play Again</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Score Display -->
+        <div class="flex justify-around items-center pt-8 border-t-2 border-gray-200 mt-6">
+            <div class="text-center p-4 rounded-xl bg-gray-50 shadow-sm w-1/3">
+                <p class="text-xl font-bold text-gray-700">Team A</p><p id="score-a" class="text-4xl font-extrabold text-purple-600">0</p>
+            </div>
+            <div class="text-center p-4 rounded-xl bg-gray-50 shadow-sm w-1/3">
+                <p class="text-xl font-bold text-gray-700">Team B</p><p id="score-b" class="text-4xl font-extrabold text-pink-600">0</p>
+            </div>
+        </div>
+        <div id="winner-display" class="text-center text-2xl font-bold text-green-600 mt-4 hidden"></div>
+    </div>
+
+    <script>
+        // --- Global State & Voice Setup ---
+        const teams = { 'A': 0, 'B': 0 };
+        let currentTeam = 'A';
+        let bestChineseVoice = null;
+        function loadAndFindBestVoice() {
+            const voices = window.speechSynthesis.getVoices();
+            bestChineseVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('Google')) || voices.find(v => v.lang === 'zh-CN');
+        }
+        window.speechSynthesis.onvoiceschanged = loadAndFindBestVoice;
+        loadAndFindBestVoice();
+
+        // --- Exercise Data ---
+        const blitzWords = [
+            { it: 'Ciao', zh: '你好' }, { it: 'Sole', zh: '太阳' }, { it: 'Gatto', zh: '猫' }, { it: 'Libro', zh: '书' },
+            { it: 'Cane', zh: '狗' }, { it: 'Verde', zh: '绿色' }, { it: 'Tavolo', zh: '桌子' }, { it: 'Sedia', zh: '椅子' },
+            { it: 'Finestra', zh: '窗户' }, { it: 'Porta', zh: '门' }, { it: 'Luce', zh: '光' }, { it: 'Aria', zh: '空气' },
+            { it: 'Fiori', zh: '花' }, { it: 'Albero', zh: '树' }, { it: 'Acqua', zh: '水' }, { it: 'Cellulare', zh: '手机' },
+        ];
+        const calloutData = {
+            teamA: [
+                { hanzi: '电脑', pinyin: 'dian nao', tones: [4, 3], italian: 'computer', italianDistractors: ['scrivania', 'telefono'], hanziDistractors: ['电话', '手机'] },
+                { hanzi: '学校', pinyin: 'xue xiao', tones: [2, 4], italian: 'scuola', italianDistractors: ['biblioteca', 'ufficio'], hanziDistractors: ['学生', '教室'] },
+                { hanzi: '朋友', pinyin: 'peng you', tones: [2, 3], italian: 'amico', italianDistractors: ['nemico', 'fratello'], hanziDistractors: ['同学', '家人'] },
+                { hanzi: '你好吗', pinyin: 'ni hao ma', tones: [3, 3, 0], italian: 'come stai?', italianDistractors: ['quanti anni hai?', 'da dove vieni?'], hanziDistractors: ['你怎么样', '早上好'] },
+                { hanzi: '我是学生', pinyin: 'wo shi xue sheng', tones: [3, 4, 2, 1], italian: 'sono uno studente', italianDistractors: ['sono un insegnante', 'vado a casa'], hanziDistractors: ['我是老师', '我爱学习'] },
+                { hanzi: '这是什么', pinyin: 'zhe shi shen me', tones: [4, 4, 2, 0], italian: 'che cos\'è questo?', italianDistractors: ['dov\'è il bagno?', 'che ore sono?'], hanziDistractors: ['那是什么', '为什么'] },
+            ],
+            teamB: [
+                { hanzi: '谢谢', pinyin: 'xie xie', tones: [4, 0], italian: 'grazie', italianDistractors: ['prego', 'scusa'], hanziDistractors: ['不客气', '没关系'] },
+                { hanzi: '再见', pinyin: 'zai jian', tones: [4, 4], italian: 'arrivederci', italianDistractors: ['ciao', 'buongiorno'], hanziDistractors: ['明天见', '回头见'] },
+                { hanzi: '中国', pinyin: 'zhong guo', tones: [1, 2], italian: 'Cina', italianDistractors: ['Giappone', 'America'], hanziDistractors: ['美国', '日本'] },
+                { hanzi: '我爱你', pinyin: 'wo ai ni', tones: [3, 4, 3], italian: 'ti amo', italianDistractors: ['mi piaci', 'ti ringrazio'], hanziDistractors: ['我喜欢你', '我恨你'] },
+                { hanzi: '他叫什么', pinyin: 'ta jiao shen me', tones: [1, 4, 2, 0], italian: 'come si chiama?', italianDistractors: ['chi è lui?', 'quanti anni ha?'], hanziDistractors: ['他是谁', '他多大'] },
+                { hanzi: '今天星期几', pinyin: 'jin tian xing qi ji', tones: [1, 1, 1, 1, 3], italian: 'che giorno è oggi?', italianDistractors: ['che ore sono?', 'che tempo fa?'], hanziDistractors: ['现在几点', '天气怎么样'] },
+            ]
+        };
+        
+        // --- DOM Elements ---
+        const mainGameContainer = document.getElementById('main-game-container');
+        const teamSelectionScreen = document.getElementById('team-selection-screen');
+        const joinTeamAButton = document.getElementById('join-team-a');
+        const joinTeamBButton = document.getElementById('join-team-b');
+        const winnerDisplay = document.getElementById('winner-display');
+        
+        // --- Utility Functions ---
+        const getToneMark = (tone) => ({ '1': '¯', '2': '´', '3': 'ˇ', '4': '`'}[tone] || '');
+        const showFeedback = (el, msg, className) => { el.textContent = msg; el.className = `h-8 text-center text-sm font-medium ${className}`; };
+        const shuffleArray = (arr) => arr.slice().sort(() => Math.random() - 0.5);
+        function updateScore(team, points) {
+            teams[team] += points;
+            document.getElementById(`score-${team.toLowerCase()}`).textContent = teams[team];
+        }
+
+        // =================================================================
+        // --- MEMORY BLITZ SCRIPT (Full Logic) ---
+        // =================================================================
+        const startBlitzButton = document.getElementById('start-blitz');
+        const blitzDisplay = document.getElementById('blitz-display');
+        const blitzFeedback = document.getElementById('blitz-feedback');
+        const blitzRoundInfo = document.getElementById('blitz-round-info');
+        const blitzTeamInfo = document.getElementById('blitz-team-info');
+        const reorderUi = document.getElementById('reorder-ui');
+        const reorderPrompt = document.getElementById('reorder-prompt');
+        const wordButtonsContainer = document.getElementById('word-buttons');
+        const userOrderDisplay = document.getElementById('user-order-display');
+        const submitReorderButton = document.getElementById('submit-reorder');
+        const blitzQuestionsDiv = document.getElementById('blitz-questions');
+        const blitzQuestionEl = document.getElementById('blitz-question');
+        const blitzOptionsContainer = document.getElementById('blitz-options-container');
+        const blitzPreviousButton = document.getElementById('blitz-previous-button');
+        const blitzSkipButton = document.getElementById('blitz-skip-button');
+        const blitzReminder = document.getElementById('blitz-reminder');
+        const blitzPostFeedbackActions = document.getElementById('blitz-post-feedback-actions');
+        const blitzShowAnswerButton = document.getElementById('blitz-show-answer-button');
+        const blitzSkipReorderButton = document.getElementById('blitz-skip-reorder-button');
+        
+        let blitzRoundIndex = 0, blitzWordsInRound = [], userReorderedItalian = [], userReorderedChinese = [], quizQuestions = [], quizQuestionIndex = 0;
+        const totalBlitzRounds = 2;
+
+        startBlitzButton.addEventListener('click', () => {
+            blitzRoundIndex = 1;
+            startBlitzGame();
+        });
+
+        function startBlitzGame() {
+            startBlitzButton.classList.add('hidden');
+            blitzQuestionsDiv.classList.add('hidden');
+            reorderUi.classList.add('hidden');
+            blitzPostFeedbackActions.classList.add('hidden');
+            showFeedback(blitzFeedback, '', '');
+            blitzTeamInfo.textContent = `Team ${currentTeam}'s Turn`;
+            blitzWordsInRound = shuffleArray(blitzWords).slice(0, 5);
+            blitzRoundInfo.textContent = `Round ${blitzRoundIndex} of ${totalBlitzRounds}`;
+            blitzDisplay.classList.add('hidden');
+            blitzReminder.classList.remove('hidden');
+            setTimeout(() => {
+                blitzReminder.classList.add('hidden');
+                blitzDisplay.classList.remove('hidden');
+                blitzDisplay.textContent = 'Memorize these words!';
+                let displayIndex = 0;
+                const displayWords = () => {
+                    if (displayIndex < blitzWordsInRound.length) {
+                        const wordPair = blitzWordsInRound[displayIndex];
+                        blitzDisplay.innerHTML = `<p class="flex flex-col sm:flex-row items-center justify-center sm:space-x-8 space-y-2 sm:space-y-0"><span class="text-3xl sm:text-4xl">${wordPair.it}</span><span class="text-4xl sm:text-5xl">${wordPair.zh}</span></p>`;
+                        setTimeout(() => { displayIndex++; displayWords(); }, 2000); 
+                    } else {
+                        startItalianReorder();
+                    }
+                };
+                setTimeout(displayWords, 1500);
+            }, 3000); 
+        }
+        function startItalianReorder() {
+            blitzDisplay.textContent = 'Reorder the Italian words!';
+            reorderUi.classList.remove('hidden');
+            reorderPrompt.textContent = 'Click the words in the original Italian order:';
+            userOrderDisplay.innerHTML = '';
+            userReorderedItalian = [];
+            const shuffledItalian = blitzWordsInRound.map(w => w.it).sort(() => 0.5 - Math.random());
+            renderReorderButtons(shuffledItalian);
+            submitReorderButton.onclick = checkItalianReorder;
+            submitReorderButton.disabled = true;
+        }
+        function startChineseReorder() {
+            blitzDisplay.textContent = 'Reorder the Chinese characters!';
+            reorderPrompt.textContent = 'Click the words in the original Chinese order:';
+            userOrderDisplay.innerHTML = '';
+            userReorderedChinese = [];
+            const shuffledChinese = blitzWordsInRound.map(w => w.zh).sort(() => 0.5 - Math.random());
+            renderReorderButtons(shuffledChinese);
+            submitReorderButton.onclick = checkChineseReorder;
+            submitReorderButton.disabled = true;
+        }
+        function renderReorderButtons(words) {
+            wordButtonsContainer.innerHTML = '';
+            words.forEach(word => {
+                const button = document.createElement('button');
+                button.textContent = word;
+                button.className = 'reorder-button px-4 py-2 text-xl sm:text-2xl bg-fuchsia-400 text-fuchsia-900 font-bold rounded-xl shadow-md hover:bg-fuchsia-500';
+                button.onclick = () => handleReorderSelection(word, button);
+                wordButtonsContainer.appendChild(button);
+            });
+        }
+        function handleReorderSelection(word, button) {
+            const isItalianPhase = userReorderedItalian.length < blitzWordsInRound.length;
+            let userOrderArray = isItalianPhase ? userReorderedItalian : userReorderedChinese;
+            if (!userOrderArray.includes(word)) {
+                userOrderArray.push(word);
+                const newSpan = document.createElement('span');
+                newSpan.textContent = word;
+                newSpan.className = 'bg-fuchsia-600 text-white rounded-md px-3 py-1 font-medium text-lg cursor-pointer';
+                newSpan.addEventListener('click', () => {
+                    const index = userOrderArray.indexOf(word);
+                    if (index > -1) {
+                        userOrderArray.splice(index, 1);
+                        newSpan.remove();
+                        button.disabled = false;
+                        button.classList.remove('selected');
+                        submitReorderButton.disabled = true; 
+                    }
+                });
+                userOrderDisplay.appendChild(newSpan);
+                button.disabled = true;
+                button.classList.add('selected');
+            }
+            submitReorderButton.disabled = userOrderArray.length !== blitzWordsInRound.length;
+        }
+        function checkItalianReorder() {
+            const originalOrder = blitzWordsInRound.map(w => w.it);
+            const isCorrect = JSON.stringify(originalOrder) === JSON.stringify(userReorderedItalian);
+            blitzPostFeedbackActions.classList.add('hidden');
+            if (isCorrect) {
+                updateScore(currentTeam, 20);
+                showFeedback(blitzFeedback, 'Correct! Now for the Chinese.', 'text-green-600');
+                setTimeout(startChineseReorder, 2000);
+            } else {
+                showFeedback(blitzFeedback, 'Incorrect order. Try again or get help.', 'text-red-600');
+                blitzPostFeedbackActions.classList.remove('hidden');
+                blitzShowAnswerButton.onclick = () => {
+                    const correctOrder = blitzWordsInRound.map(w => w.it).join(', ');
+                    showFeedback(blitzFeedback, `Correct order: ${correctOrder}`, 'text-blue-600');
+                    blitzShowAnswerButton.disabled = true;
+                };
+                blitzSkipReorderButton.onclick = () => {
+                    blitzPostFeedbackActions.classList.add('hidden');
+                    blitzShowAnswerButton.disabled = false;
+                    showFeedback(blitzFeedback, '', '');
+                    startChineseReorder();
+                };
+            }
+        }
+        function checkChineseReorder() {
+            const originalOrder = blitzWordsInRound.map(w => w.zh);
+            const isCorrect = JSON.stringify(originalOrder) === JSON.stringify(userReorderedChinese);
+            blitzPostFeedbackActions.classList.add('hidden');
+            if (isCorrect) {
+                updateScore(currentTeam, 20);
+                showFeedback(blitzFeedback, 'Correct! Get ready for the quiz.', 'text-green-600');
+                setTimeout(startBlitzQuiz, 2000);
+            } else {
+                showFeedback(blitzFeedback, 'Incorrect order. Try again or get help.', 'text-red-600');
+                blitzPostFeedbackActions.classList.remove('hidden');
+                blitzShowAnswerButton.onclick = () => {
+                    const correctOrder = blitzWordsInRound.map(w => w.zh).join(', ');
+                    showFeedback(blitzFeedback, `Correct order: ${correctOrder}`, 'text-blue-600');
+                    blitzShowAnswerButton.disabled = true;
+                };
+                blitzSkipReorderButton.onclick = () => {
+                    blitzPostFeedbackActions.classList.add('hidden');
+                    blitzShowAnswerButton.disabled = false;
+                    showFeedback(blitzFeedback, '', '');
+                    startBlitzQuiz();
+                };
+            }
+        }
+        function startBlitzQuiz() {
+            reorderUi.classList.add('hidden');
+            blitzDisplay.classList.add('hidden');
+            blitzQuestionsDiv.classList.remove('hidden');
+            quizQuestions = [];
+            const [word1, word2] = blitzWordsInRound;
+            const distractorsZh = shuffleArray(blitzWords.filter(w => w.zh !== word1.zh && w.zh !== word2.zh).map(w => w.zh));
+            const distractorsIt = shuffleArray(blitzWords.filter(w => w.it !== word1.it && w.it !== word2.it).map(w => w.it));
+            quizQuestions.push({ question: `What was the Chinese for "${word1.it}"?`, answer: word1.zh, options: shuffleArray([word1.zh, distractorsZh[0], distractorsZh[1]]) });
+            quizQuestions.push({ question: `What was the Italian for "${word2.zh}"?`, answer: word2.it, options: shuffleArray([word2.it, distractorsIt[0], distractorsIt[1]]) });
+            quizQuestionIndex = 0;
+            showNextBlitzQuestion();
+        }
+        function showNextBlitzQuestion() {
+            if (quizQuestionIndex < quizQuestions.length) {
+                const q = quizQuestions[quizQuestionIndex];
+                blitzQuestionEl.textContent = q.question;
+                blitzOptionsContainer.innerHTML = '';
+                q.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.className = 'w-full p-3 text-xl sm:text-2xl bg-gray-100 text-gray-800 font-semibold rounded-lg border-2 border-gray-300 hover:bg-gray-200';
+                    button.onclick = () => checkBlitzAnswer(option);
+                    blitzOptionsContainer.appendChild(button);
+                });
+                blitzPreviousButton.style.visibility = (quizQuestionIndex === 0) ? 'hidden' : 'visible';
+            } else {
+                endBlitzRound();
+            }
+        }
+        function checkBlitzAnswer(selectedOption) {
+            const q = quizQuestions[quizQuestionIndex];
+            if (selectedOption === q.answer) {
+                updateScore(currentTeam, 10);
+                showFeedback(blitzFeedback, 'Correct!', 'text-green-600');
+            } else {
+                showFeedback(blitzFeedback, `Wrong. Correct was: "${q.answer}".`, 'text-red-600');
+            }
+            quizQuestionIndex++;
+            setTimeout(() => { showFeedback(blitzFeedback, '', ''); showNextBlitzQuestion(); }, 1500);
+        }
+        function endBlitzRound() {
+            blitzQuestionsDiv.classList.add('hidden');
+            currentTeam = currentTeam === 'A' ? 'B' : 'A';
+            if (blitzRoundIndex < totalBlitzRounds) {
+                blitzRoundIndex++;
+                blitzDisplay.textContent = 'Round complete! Next round starts soon...';
+                blitzDisplay.classList.remove('hidden');
+                setTimeout(startBlitzGame, 3000);
+            } else {
+                blitzDisplay.textContent = 'Memory Blitz Complete!';
+                blitzDisplay.classList.remove('hidden');
+                startBlitzButton.textContent = 'Play Again';
+                startBlitzButton.classList.remove('hidden');
+            }
+        }
+        blitzPreviousButton.addEventListener('click', () => { if (quizQuestionIndex > 0) { quizQuestionIndex--; showNextBlitzQuestion(); }});
+        blitzSkipButton.addEventListener('click', () => { quizQuestionIndex++; showNextBlitzQuestion(); });
+        // --- END OF MEMORY BLITZ SCRIPT ---
+
+
+        // --- CALLOUT CHALLENGE SCRIPT ---
+        let gamePhase = 'TEAM_A_TURN';
+        let calloutGameIndex = 0;
+        let userSelectedTones = [];
+        let userSelectedItalian = '';
+        let currentlySelectedTone = null;
+
+        const calloutMainUI = document.getElementById('callout-main-ui');
+        const transitionScreen = document.getElementById('transition-screen');
+        const startNextTurnButton = document.getElementById('start-next-turn-button');
+        const calloutRoundInfo = document.getElementById('callout-round-info');
+        const calloutTeamInfo = document.getElementById('callout-team-info');
+        const playAudioButton = document.getElementById('play-audio');
+        const calloutPinyinInput = document.getElementById('callout-answer-pinyin');
+        const calloutHanziInput = document.getElementById('callout-answer-hanzi');
+        const hanziHintButton = document.getElementById('hanzi-hint-button');
+        const hanziHintOptionsContainer = document.getElementById('hanzi-hint-options');
+        const pinyinToneTarget = document.getElementById('pinyin-tone-target');
+        const tonePalette = document.getElementById('tone-palette');
+        const italianOptionsContainer = document.getElementById('italian-options-container');
+        const actionButtonsContainer = document.getElementById('action-buttons-container');
+        const previousChallengeButton = document.getElementById('previous-challenge-button');
+        const submitCalloutButton = document.getElementById('submit-callout');
+        const skipButton = document.getElementById('skip-button');
+        const calloutFeedback = document.getElementById('callout-feedback');
+        const nextChallengeButton = document.getElementById('next-challenge-button');
+        const playAgainButton = document.getElementById('play-again-button');
+
+        function setupCalloutChallenge() {
+            if (gamePhase === 'TRANSITION') {
+                calloutMainUI.classList.add('hidden');
+                transitionScreen.classList.remove('hidden');
+                return;
+            }
+            calloutMainUI.classList.remove('hidden');
+            transitionScreen.classList.add('hidden');
+            [calloutPinyinInput, calloutHanziInput].forEach(el => el.value = '');
+            pinyinToneTarget.innerHTML = '';
+            italianOptionsContainer.innerHTML = '';
+            hanziHintOptionsContainer.innerHTML = '';
+            hanziHintOptionsContainer.classList.add('hidden');
+            userSelectedTones = [];
+            userSelectedItalian = '';
+            
+            nextChallengeButton.classList.add('hidden');
+            playAgainButton.classList.add('hidden');
+            actionButtonsContainer.classList.remove('hidden');
+            [submitCalloutButton, skipButton, previousChallengeButton, calloutPinyinInput, calloutHanziInput, hanziHintButton].forEach(el => el.disabled = false);
+
+            const wordList = gamePhase === 'TEAM_A_TURN' ? calloutData.teamA : calloutData.teamB;
+            calloutTeamInfo.textContent = `Team ${currentTeam}'s Turn`;
+            calloutRoundInfo.textContent = `Question ${calloutGameIndex + 1} of ${wordList.length}`;
+            previousChallengeButton.style.visibility = (calloutGameIndex === 0 && gamePhase === 'TEAM_A_TURN') ? 'hidden' : 'visible';
+
+            const currentWord = wordList[calloutGameIndex];
+            const italianChoices = shuffleArray([currentWord.italian, ...currentWord.italianDistractors]);
+            italianChoices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.className = 'italian-option-button w-full p-3 bg-white text-indigo-600 font-semibold rounded-lg border-2 border-indigo-300 hover:bg-indigo-100 transition-colors';
+                button.onclick = () => {
+                    document.querySelectorAll('.italian-option-button').forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                    userSelectedItalian = choice.toLowerCase();
+                };
+                italianOptionsContainer.appendChild(button);
+            });
+        }
+        function setupPinyinDropZones() {
+            pinyinToneTarget.innerHTML = '';
+            const wordList = gamePhase === 'TEAM_A_TURN' ? calloutData.teamA : calloutData.teamB;
+            const correctSyllables = wordList[calloutGameIndex].pinyin.split(' ');
+            userSelectedTones = new Array(correctSyllables.length).fill(null);
+            correctSyllables.forEach((syllable, index) => {
+                const dropZone = document.createElement('div');
+                dropZone.className = 'syllable-drop-zone p-4 rounded-lg bg-gray-50 min-w-[5rem] text-center';
+                const text = document.createElement('span');
+                text.className = 'text-2xl font-bold text-gray-800';
+                text.textContent = syllable;
+                const toneOverlay = document.createElement('span');
+                toneOverlay.className = 'tone-overlay';
+                dropZone.append(toneOverlay, text);
+                dropZone.onclick = () => {
+                    if (currentlySelectedTone !== null) {
+                        userSelectedTones[index] = currentlySelectedTone;
+                        toneOverlay.textContent = getToneMark(currentlySelectedTone);
+                        document.querySelectorAll('.tone-box').forEach(b => b.classList.remove('selected-tone'));
+                        currentlySelectedTone = null;
+                    }
+                };
+                pinyinToneTarget.appendChild(dropZone);
+            });
+        }
+        function endGame() {
+            showFeedback(calloutFeedback, 'Challenge Complete!', 'text-green-600');
+            winnerDisplay.textContent = teams.A > teams.B ? 'Team A wins! 🎉' : (teams.B > teams.A ? 'Team B wins! 🎉' : "It's a tie! 🤝");
+            winnerDisplay.classList.remove('hidden');
+            actionButtonsContainer.classList.add('hidden');
+            nextChallengeButton.classList.add('hidden');
+            playAgainButton.classList.remove('hidden');
+            calloutMainUI.classList.add('hidden');
+        }
+        function restartGame() {
+            teams.A = 0; teams.B = 0;
+            document.getElementById('score-a').textContent = '0';
+            document.getElementById('score-b').textContent = '0';
+            winnerDisplay.classList.add('hidden');
+            currentTeam = 'A';
+            gamePhase = 'TEAM_A_TURN';
+            calloutGameIndex = 0;
+            setupCalloutChallenge();
+        }
+        playAudioButton.addEventListener('click', () => {
+            const wordList = gamePhase === 'TEAM_A_TURN' ? calloutData.teamA : calloutData.teamB;
+            const currentWord = wordList[calloutGameIndex];
+            if (!currentWord) return;
+            const utterance = new SpeechSynthesisUtterance(currentWord.hanzi);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            if (bestChineseVoice) utterance.voice = bestChineseVoice;
+            window.speechSynthesis.speak(utterance);
+        });
+        hanziHintButton.addEventListener('click', () => {
+            const wordList = gamePhase === 'TEAM_A_TURN' ? calloutData.teamA : calloutData.teamB;
+            const currentWord = wordList[calloutGameIndex];
+            const hanziChoices = shuffleArray([currentWord.hanzi, ...currentWord.hanziDistractors]);
+            hanziHintOptionsContainer.innerHTML = '';
+            hanziChoices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.className = "w-full p-2 text-2xl bg-blue-100 text-blue-800 font-semibold rounded-lg border-2 border-blue-200 hover:bg-blue-200";
+                button.onclick = () => { calloutHanziInput.value = choice; };
+                hanziHintOptionsContainer.appendChild(button);
+            });
+            hanziHintOptionsContainer.classList.remove('hidden');
+            hanziHintButton.disabled = true;
+        });
+        calloutPinyinInput.addEventListener('blur', setupPinyinDropZones);
+        tonePalette.addEventListener('click', e => {
+            const toneBox = e.target.closest('.tone-box');
+            if (toneBox) {
+                document.querySelectorAll('.tone-box').forEach(b => b.classList.remove('selected-tone'));
+                toneBox.classList.add('selected-tone');
+                currentlySelectedTone = parseInt(toneBox.dataset.tone, 10);
+            }
+        });
+        submitCalloutButton.addEventListener('click', () => {
+            const wordList = gamePhase === 'TEAM_A_TURN' ? calloutData.teamA : calloutData.teamB;
+            const currentWord = wordList[calloutGameIndex];
+            const pinyinAnswer = calloutPinyinInput.value.trim().toLowerCase().replace(/\s/g, '');
+            const correctPinyin = currentWord.pinyin.replace(/\s/g, '');
+            const normalizedUserTones = userSelectedTones.map(t => t === null ? 0 : t);
+            const isHanziCorrect = calloutHanziInput.value.trim() === currentWord.hanzi;
+            const isPinyinCorrect = pinyinAnswer === correctPinyin;
+            const isTonesCorrect = JSON.stringify(normalizedUserTones) === JSON.stringify(currentWord.tones);
+            const isItalianCorrect = userSelectedItalian === currentWord.italian.toLowerCase();
+            if (isHanziCorrect && isPinyinCorrect && isTonesCorrect && isItalianCorrect) {
+                updateScore(currentTeam, 20);
+                showFeedback(calloutFeedback, 'Correct! Great job.', 'text-green-600');
+                nextChallengeButton.classList.remove('hidden');
+                actionButtonsContainer.classList.add('hidden');
+            } else {
+                showFeedback(calloutFeedback, 'Not quite right. Check all your answers.', 'text-red-600');
+            }
+        });
+        previousChallengeButton.addEventListener('click', () => {
+            if (calloutGameIndex > 0) {
+                calloutGameIndex--;
+                setupCalloutChallenge();
+            } else if (gamePhase === 'TEAM_B_TURN') {
+                gamePhase = 'TEAM_A_TURN';
+                currentTeam = 'A';
+                calloutGameIndex = calloutData.teamA.length - 1;
+                setupCalloutChallenge();
+            }
+        });
+        skipButton.addEventListener('click', () => nextChallengeButton.click());
+        nextChallengeButton.addEventListener('click', () => {
+            calloutGameIndex++;
+            const wordList = gamePhase === 'TEAM_A_TURN' ? calloutData.teamA : calloutData.teamB;
+            if (calloutGameIndex >= wordList.length) {
+                if (gamePhase === 'TEAM_A_TURN') {
+                    gamePhase = 'TRANSITION';
+                } else {
+                    endGame();
+                    return;
+                }
+            }
+            setupCalloutChallenge();
+        });
+        startNextTurnButton.addEventListener('click', () => {
+            currentTeam = 'B';
+            gamePhase = 'TEAM_B_TURN';
+            calloutGameIndex = 0;
+            setupCalloutChallenge();
+        });
+        playAgainButton.addEventListener('click', restartGame);
+        // --- END OF CALLOUT CHALLENGE SCRIPT ---
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            function selectTeam(team) {
+                currentTeam = team;
+                teamSelectionScreen.classList.add('hidden');
+                mainGameContainer.classList.remove('hidden');
+                restartGame();
+            }
+            joinTeamAButton.addEventListener('click', () => selectTeam('A'));
+            joinTeamBButton.addEventListener('click', () => selectTeam('B'));
+            
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-button').forEach(item => item.classList.remove('bg-white', 'shadow-sm'));
+                    tab.classList.add('bg-white', 'shadow-sm');
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+            document.querySelector('.tab-button[data-tab="tab1"]').click();
+        });
+    </script>
+</body>
+</html>
